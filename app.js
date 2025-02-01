@@ -2,6 +2,8 @@ import express from "express";
 import notFoundPage from './middlewares/notFoundRoute.js';
 import handleError from "./middlewares/handleError.js";
 import cors from "cors";
+import travelsRouter from "./routers/travels.js"
+import travelersRouter from "./routers/travelers.js"
 
 
 const app = express(); // Inizializza l'app Express
@@ -17,9 +19,9 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // Definisci una rotta di base
-app.use("/travels", moviesRouter);
+app.use("/travels", travelsRouter);
 
-
+app.use("/travels/travelers", travelersRouter)
 
 app.use(notFoundPage.notFoundRoute);
 app.use(handleError);
