@@ -9,7 +9,7 @@ const connection = mysql.createConnection({
 
 connection.connect((err) => {
     if(err) throw err;
-    console.log("Connected to movies_db")
+    console.log("Connected to weroad_db")
 });
 
 export default connection; 
