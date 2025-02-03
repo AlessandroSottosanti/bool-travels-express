@@ -75,3 +75,25 @@ INSERT INTO Viaggi_Viaggiatori (viaggio_id, viaggiatore_id) VALUES
 UPDATE Viaggi 
 SET inCorso = 1 
 WHERE id IN (1, 3, 5, 7, 9);
+
+-- DA AGGIUNGERE DATA DI NASCITA
+
+ALTER TABLE Viaggiatori ADD COLUMN dataDiNascita VARCHAR(16);
+
+UPDATE viaggiatori SET dataDiNascita = '1980-01-01' WHERE id = 1;
+UPDATE viaggiatori SET dataDiNascita = '1985-02-02' WHERE id = 2;
+UPDATE viaggiatori SET dataDiNascita = '1990-03-03' WHERE id = 3;
+UPDATE viaggiatori SET dataDiNascita = '1995-04-04' WHERE id = 4;
+UPDATE viaggiatori SET dataDiNascita = '1970-05-05' WHERE id = 5;
+UPDATE viaggiatori SET dataDiNascita = '1975-06-06' WHERE id = 6;
+UPDATE viaggiatori SET dataDiNascita = '1988-07-07' WHERE id = 7;
+UPDATE viaggiatori SET dataDiNascita = '1985-08-08' WHERE id = 65;
+UPDATE viaggiatori SET dataDiNascita = '1992-09-09' WHERE id = 66;
+UPDATE viaggiatori SET dataDiNascita = '1987-10-10' WHERE id = 67;
+UPDATE viaggiatori SET dataDiNascita = '1993-11-11' WHERE id = 68;
+UPDATE viaggiatori SET dataDiNascita = '1980-12-12' WHERE id = 69;
+UPDATE viaggiatori SET dataDiNascita = '1979-01-13' WHERE id = 70;
+UPDATE viaggiatori SET dataDiNascita = '1995-02-14' WHERE id = 71;
+UPDATE viaggiatori SET dataDiNascita = '1988-03-15' WHERE id = 72;
+UPDATE viaggiatori SET dataDiNascita = '1991-04-16' WHERE id = 73;
+UPDATE viaggiatori SET dataDiNascita = '1994-05-17' WHERE id = 74;
