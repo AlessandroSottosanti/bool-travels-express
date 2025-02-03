@@ -80,3 +80,8 @@ INSERT INTO Viaggi_Viaggiatori (viaggio_id, viaggiatore_id) VALUES
 INSERT INTO Viaggi_Viaggiatori (viaggio_id, viaggiatore_id) VALUES
 (1, 65), (2, 66), (3, 67), (4, 68), (5, 69), (6, 70), (7, 71), (8, 72), (9, 73), (10, 74);
 
+
+
+UPDATE Viaggi 
+SET inCorso = 1 
+WHERE id IN (1, 3, 5, 7, 9);
