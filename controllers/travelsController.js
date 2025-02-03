@@ -46,7 +46,7 @@ const index = (req, res, next) => {
                     });
 
                     const viaggiFinali = Object.values(viaggiMap);
-                    return res.status(200).json({ status: "success", data: viaggiFinali });
+                    return res.status(200).json({ status: "success", data: viaggiFinali, slug: slug });
                 } catch (processingError) {
                     console.error("Errore durante l'elaborazione dei dati:", processingError);
                     return res.status(500).json({ status: "error", message: "Errore durante l'elaborazione dei dati." });
@@ -62,7 +62,7 @@ const index = (req, res, next) => {
 const store = (req, res, next) => {
     const { destinazione, dataPartenza, dataRitorno, guide } = req.body;
 
-    const slug = slugify(destinazione, {
+    const slug = slugify(destinazione, dataPartenza, {
         lower: true,
         strict: true
     });
@@ -110,6 +110,7 @@ const store = (req, res, next) => {
             status: "success",
             message: "Viaggio creato con successo",
             data: results,
+            slug: slug
         });
     });
 };
