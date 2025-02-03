@@ -1,3 +1,5 @@
+ALTER TABLE Viaggiatori ADD COLUMN codiceFiscale VARCHAR(16) UNIQUE;
+
 ALTER TABLE Viaggi ADD COLUMN inCorso BOOLEAN DEFAULT FALSE;
 
 -- Inserimento Viaggi aggiornato con il campo inCorso
