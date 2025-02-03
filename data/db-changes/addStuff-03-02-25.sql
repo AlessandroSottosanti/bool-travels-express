@@ -2,18 +2,6 @@ ALTER TABLE Viaggiatori ADD COLUMN codiceFiscale VARCHAR(16) UNIQUE;
 
 ALTER TABLE Viaggi ADD COLUMN inCorso BOOLEAN DEFAULT FALSE;
 
--- Inserimento Viaggi aggiornato con il campo inCorso
-INSERT INTO Viaggi (id, destinazione, dataPartenza, dataRitorno, inCorso) VALUES
-(1, 'Roma, Italia', '2023-11-01', '2023-11-07', FALSE),
-(2, 'Parigi, Francia', '2023-11-10', '2023-11-15', FALSE),
-(3, 'New York, USA', '2023-12-05', '2023-12-12', FALSE),
-(4, 'Tokyo, Giappone', '2024-01-15', '2024-01-22', FALSE),
-(5, 'Londra, Regno Unito', '2024-02-01', '2024-02-08', FALSE),
-(6, 'Barcellona, Spagna', '2024-03-10', '2024-03-17', FALSE),
-(7, 'Berlino, Germania', '2024-04-05', '2024-04-12', FALSE),
-(8, 'Sydney, Australia', '2024-05-01', '2024-05-10', FALSE),
-(9, 'Rio de Janeiro, Brasile', '2024-06-15', '2024-06-22', FALSE),
-(10, 'Città del Capo, Sudafrica', '2024-07-01', '2024-07-10', FALSE);
 
 -- Inserimento Viaggiatori aggiornato con codice fiscale
 
