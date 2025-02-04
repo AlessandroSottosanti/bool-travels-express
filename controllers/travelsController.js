@@ -46,7 +46,7 @@ const index = (req, res, next) => {
                     });
 
                     const viaggiFinali = Object.values(viaggiMap);
-                    return res.status(200).json({ status: "success", data: viaggiFinali, slug: slug });
+                    return res.status(200).json({ status: "success", data: viaggiFinali});
                 } catch (processingError) {
                     console.error("Errore durante l'elaborazione dei dati:", processingError);
                     return res.status(500).json({ status: "error", message: "Errore durante l'elaborazione dei dati." });
@@ -59,61 +59,85 @@ const index = (req, res, next) => {
     }
 };
 
-const store = (req, res, next) => {
-    const { destinazione, dataPartenza, dataRitorno, guide } = req.body;
+const store = async (req, res) => {
+    try {
+        const { destinazione, dataPartenza, dataRitorno, guide } = req.body;
 
-    const slug = slugify(destinazione, dataPartenza, {
-        lower: true,
-        strict: true
-    });
-
-    const dataCorrente = new Date(); // Data corrente
-
-    const inCorso = (dataCorrente >= dataPartenza && dataCorrente <= dataRitorno) ? 1 : 0;
-
-    // Verifica se ci sono guide
-    if (guide.length === 0) {
-        return res.status(400).json({
-            status: "fail",
-            message: "Il viaggio deve avere almeno una guida.",
-            dettagli: "La lista delle guide è vuota."
+        // Genera lo slug univoco per il viaggio
+        const slug = slugify(destinazione, {
+            lower: true,
+            strict: true
         });
-    }
 
-    // Verifica se il nome e cognome delle guide sono validi
-    for (const guida of guide) {
-        if ((guida.nome.length || guida.cognome.length) < 3) {
-            return res.status(400).json({
-                status: "fail",
-                message: "Il nome ed il cognome devono contenere almeno 3 caratteri",
-                dettagli: `La guida ${guida.nome} ${guida.cognome} ha un nome o cognome troppo corto.`
-            });
+        // Ottieni la data corrente nel fuso orario di Roma
+        const dataCorrente = new Date().toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' });
+        const [giorno, mese, anno] = dataCorrente.split('/');
+        const dataSenzaOra = `${anno}-${mese.padStart(2, '0')}-${giorno.padStart(2, '0')}`;
+
+        if (dataPartenza > dataRitorno) {
+            return res.status(400).json({ status: "error", message: "La data di partenza non può essere successiva alla data di ritorno" });
         }
-    }
 
-    // Query di inserimento
-    const sqlCreate = `
-    INSERT INTO viaggi (slug, destinazione, dataPartenza, dataRitorno, inCorso)
-    VALUES (?, ?, ?, ?, ?);
-    `;
+        // Verifica se il viaggio è in corso
+        const inCorso = (dataSenzaOra >= dataPartenza && dataSenzaOra <= dataRitorno) ? 1 : 0;
 
-    connection.query(sqlCreate, [slug, destinazione, dataPartenza, dataRitorno, inCorso], (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                status: "fail",
-                message: "Errore nel salvataggio del viaggio.",
-                dettagli: err.message // Aggiungi il messaggio di errore dal database
-            });
+        if (!guide || guide.length === 0) {
+            return res.status(400).json({ status: "fail", message: "Il viaggio deve avere almeno una guida." });
+        }
+
+        // 1️⃣ INSERIRE IL VIAGGIO E OTTENERE IL SUO ID
+        const sqlCreateViaggio = `
+            INSERT INTO viaggi (slug, destinazione, dataPartenza, dataRitorno, inCorso)
+            VALUES (?, ?, ?, ?, ?);
+        `;
+        const [resultViaggio] = await connection.promise().query(sqlCreateViaggio, [slug, destinazione, dataPartenza, dataRitorno, inCorso]);
+        const viaggioId = resultViaggio.insertId;
+
+        // 2️⃣ RICAVARE GLI ID DELLE GUIDE (evitando duplicati)
+        const guideSet = new Set(guide.map(g => `${g.nome.toLowerCase()}|${g.cognome.toLowerCase()}`)); // Evita duplicati basati su nome e cognome
+        const guideIds = [];
+
+        await Promise.all([...guideSet].map(async (guideKey) => {
+            const [nome, cognome] = guideKey.split('|');
+
+            // Controlla se la guida esiste già
+            const sqlCheckGuida = `SELECT id FROM guide WHERE nome = ? AND cognome = ?`;
+            const [existingGuide] = await connection.promise().query(sqlCheckGuida, [nome, cognome]);
+
+            let guidaId;
+            if (existingGuide.length > 0) {
+                guidaId = existingGuide[0].id;
+            } else {
+                // Se la guida non esiste, la inseriamo
+                const sqlInsertGuida = `INSERT INTO guide (nome, cognome) VALUES (?, ?)`;
+                const [resultGuida] = await connection.promise().query(sqlInsertGuida, [nome, cognome]);
+                guidaId = resultGuida.insertId;
+            }
+
+            guideIds.push(guidaId);
+        }));
+
+        // 3️⃣ INSERIRE LE RELAZIONI TRA VIAGGIO E GUIDE NELLA TABELLA PONTE
+        if (guideIds.length > 0) {
+            const sqlInsertViaggiGuide = `INSERT INTO viaggi_guide (viaggio_id, guida_id) VALUES ?`;
+            const values = guideIds.map(guidaId => [viaggioId, guidaId]);
+            await connection.promise().query(sqlInsertViaggiGuide, [values]);
         }
 
         return res.status(200).json({
             status: "success",
-            message: "Viaggio creato con successo",
-            data: results,
+            message: "Viaggio e guide inseriti con successo",
+            viaggioId,
+            guideIds,
             slug: slug
         });
-    });
+
+    } catch (err) {
+        console.error("Errore nell'inserimento:", err);
+        return res.status(500).json({ status: "error", message: "Errore nell'inserimento del viaggio e delle guide." });
+    }
 };
+
 
 
 export default { index, store };

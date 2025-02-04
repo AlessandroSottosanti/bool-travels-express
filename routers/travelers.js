@@ -6,4 +6,7 @@ const router = express.Router();
 // INDEX
 router.get("/:slug", travelersController.index);
 
+router.post("/:slug", travelersController.store);
+
+
 export default router;
