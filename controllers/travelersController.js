@@ -4,7 +4,6 @@ const index = (req, res, next) => {
     try {
         const slug = req.params.slug;
 
-        // query verifica esistenza viaggio
         const sqlTravel = `
             SELECT * FROM viaggi
             WHERE viaggi.slug = ?
@@ -23,7 +22,6 @@ const index = (req, res, next) => {
                     });
                 }
 
-                // Impostazione della query per i viaggiatori
                 let sql = `
                 SELECT Viaggiatori.*
                 FROM 
@@ -37,9 +35,8 @@ const index = (req, res, next) => {
                 
             `;
 
-                const params = [slug];  // Parametro iniziale per lo slug
+                const params = [slug];  
 
-                // Gestione del filtro di ricerca se presente
                 const filters = req.query;
                 console.log("filters:", filters.search);
                 if (filters.search) {
@@ -48,7 +45,6 @@ const index = (req, res, next) => {
                     params.push(`%${filters.search}%`);
                 }
 
-                // Esegui la query per ottenere i viaggiatori filtrati
                 connection.query(sql, params, (err, results) => {
                     if (err) {
                         console.error("Errore nella query dei viaggiatori:", err);
@@ -76,15 +72,15 @@ const index = (req, res, next) => {
 };
 
 const store = async (req, res, next) => {
-    const slug = req.params.slug;  // Ottieni lo slug dal query parameter
-    const viaggiatori = req.body.viaggiatori;  // Array di viaggiatori dal body della richiesta
+    const slug = req.params.slug;  
+    const viaggiatori = req.body.viaggiatori;  
 
     if (!viaggiatori || !Array.isArray(viaggiatori) || viaggiatori.length === 0) {
         return res.status(400).json({ status: "error", message: "Nessun viaggiatore fornito." });
     }
 
     try {
-        //  Verifica se il viaggio esiste tramite lo slug
+
         const sqlTravel = `SELECT id FROM viaggi WHERE slug = ?`;
         const [travelResults] = await connection.promise().query(sqlTravel, [slug]);
 
@@ -92,33 +88,31 @@ const store = async (req, res, next) => {
             return res.status(404).json({ status: "error", message: "Viaggio non trovato." });
         }
 
-        const viaggioId = travelResults[0].id;  // ID del viaggio trovato
+        const viaggioId = travelResults[0].id; 
 
         let viaggiatoriConDuplicati = [];
         let viaggiatoriDaInserire = [];
 
-        //  Itera sui viaggiatori e verifica i duplicati nel database
+
         for (const viaggiatore of viaggiatori) {
             const { nome, cognome, mail, telefono, codiceFiscale, dataDiNascita } = viaggiatore;
 
-            // Controlla se il viaggiatore esiste già nel database
             const sqlCheckDuplicate = `
                 SELECT id FROM Viaggiatori
                 WHERE nome = ? AND cognome = ? AND mail = ?`;
             const [duplicateResults] = await connection.promise().query(sqlCheckDuplicate, [nome, cognome, mail]);
 
             if (duplicateResults.length > 0) {
-                // Se il viaggiatore è già presente, lo segnaliamo
+
                 const viaggiatoreId = duplicateResults[0].id;
 
-                // Verifica se il viaggiatore è già collegato al viaggio
                 const sqlCheckLink = `
                     SELECT * FROM Viaggi_Viaggiatori
                     WHERE viaggio_id = ? AND Viaggiatore_id = ?`;
                 const [linkResults] = await connection.promise().query(sqlCheckLink, [viaggioId, viaggiatoreId]);
 
                 if (linkResults.length === 0) {
-                    // Se non esiste il collegamento, lo aggiungiamo
+
                     const sqlLinkTravelers = `
                         INSERT INTO Viaggi_Viaggiatori (viaggio_id, Viaggiatore_id) VALUES (?, ?)`;
                     await connection.promise().query(sqlLinkTravelers, [viaggioId, viaggiatoreId]);
@@ -126,16 +120,13 @@ const store = async (req, res, next) => {
 
                 viaggiatoriConDuplicati.push(viaggiatore);
             } else {
-                // Altrimenti, lo aggiungiamo all'elenco da inserire
                 viaggiatoriDaInserire.push({ nome, cognome, mail, telefono, codiceFiscale, dataDiNascita  });
             }
         }
 
-        //  Funzione per inserire i viaggiatori nuovi e creare i collegamenti
         if (viaggiatoriDaInserire.length > 0) {
             const sqlInsert = `INSERT INTO Viaggiatori (nome, cognome, mail, telefono, codiceFiscale, dataDiNascita ) VALUES ?`;
 
-            // Mappa ogni viaggiatore includendo tutti i campi necessari
             const viaggiatoriValues = viaggiatoriDaInserire.map(v => [
                 v.nome, v.cognome, v.mail, v.telefono, v.codiceFiscale, v.dataDiNascita 
             ]);
@@ -144,7 +135,6 @@ const store = async (req, res, next) => {
 
             const viaggiatoriLinkValues = [];
             for (let i = 0; i < viaggiatoriDaInserire.length; i++) {
-                // Inseriamo l'ID dei nuovi viaggiatori, calcolato da insertResults.insertId
                 viaggiatoriLinkValues.push([viaggioId, insertResults.insertId + i]);
             }
 
@@ -153,7 +143,6 @@ const store = async (req, res, next) => {
             await connection.promise().query(sqlLinkTravelers, [viaggiatoriLinkValues]);
         }
 
-        // Risposta di successo
         return res.status(200).json({
             status: "success",
             message: "Viaggiatori aggiunti correttamente.",
@@ -168,10 +157,5 @@ const store = async (req, res, next) => {
     }
 };
 
-
-
-
-
-// const store = (req)
 
 export default { index, store };
